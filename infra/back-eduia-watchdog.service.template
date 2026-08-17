@@ -1,0 +1,10 @@
+# Health probe for back-eduia-dev. Restarts the dev service when the
+# liveness endpoint stops answering (covers a crashed child that bun's
+# watcher never respawns while systemd still reports "active").
+[Unit]
+Description=EduIA backend dev health watchdog
+After=back-eduia-dev.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'curl -fsS -m 5 http://127.0.0.1:3125/health/live >/dev/null || systemctl restart back-eduia-dev.service'

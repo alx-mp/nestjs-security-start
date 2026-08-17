@@ -1,0 +1,36 @@
+# Bun runs things here. It does not install things here.
+#
+# pnpm owns node_modules and pnpm-lock.yaml; bun owns `bun run <script>` and
+# the dev server (`bun --watch src/main.ts`). Tested against Bun 1.3.13 on
+# this host — bun.com documents 1.3.14 and several install keys in those docs
+# do nothing on 1.3.13. Re-test after a bun upgrade.
+
+telemetry = false
+
+[install]
+# Bun's default is "auto": if node_modules is missing when you run a script,
+# it quietly fetches dependencies from npm mid-run, around pnpm, with no
+# lockfile and no review. With this set, importing a missing package fails
+# with "Cannot find package" instead of installing it.
+auto = "disable"
+
+# Does not stop `bun install` on 1.3.13, but does block the bun.lock write,
+# which is worth having: bun otherwise migrates pnpm-lock.yaml into its own
+# format on first contact and you end up with two dependency trees. The thing
+# that actually stops `bun install` is scripts/enforce-pnpm.mjs (preinstall).
+frozenLockfile = true
+
+# Skip versions published in the last three days. Bun counts seconds; pnpm
+# counts minutes, so 259200 here and 4320 in pnpm-workspace.yaml agree.
+minimumReleaseAge = 259200
+minimumReleaseAgeExcludes = []
+
+# Deliberately NOT set:
+#
+#   ignoreScripts   Would also skip THIS project's preinstall guard, which is
+#                   the only thing that stops `bun install`.
+#   [run] bun       The front sets it; this project does not. Production runs
+#                   `node dist/main.js` and `nest build` must run under the
+#                   same Node that ships, or a Bun-only API slips into code
+#                   that dies in the prod container. The dev server already
+#                   runs on Bun explicitly via `bun --watch src/main.ts`.

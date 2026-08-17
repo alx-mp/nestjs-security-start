@@ -1,0 +1,88 @@
+# pnpm settings for this project. Same supply-chain posture as the front
+# (dashboard-eduai): pnpm 11 ignores these keys in .npmrc, silently, so they
+# live here. Keys are camelCase; pnpm 11 skips any key that is not.
+
+# Wait three days before adopting a freshly published version. Most malicious
+# npm releases are caught and yanked within hours; this window is what buys
+# the ecosystem time to notice.
+minimumReleaseAge: 4320
+
+# Fail rather than quietly fall back to a version that has not aged yet.
+minimumReleaseAgeStrict: true
+
+# Some registry mirrors do not return the "time" field. Without this,
+# resolution hard-fails with ERR_PNPM_MISSING_TIME instead of skipping the
+# age check.
+minimumReleaseAgeIgnoreMissingTime: true
+
+# Packages allowed to skip the waiting period.
+#
+# The rule, same as the front: first-party framework packages that we pin by
+# hand in package.json are excluded; everything else waits. The age gate
+# exists for the transitive packages nobody reads before they land in
+# node_modules. A framework version is a deliberate, reviewed act released by
+# the NestJS core team from the same CI. Without these entries an exact pin
+# on release day cannot resolve at all.
+#
+# A third-party package added here is a debt. Write the date and the reason,
+# and take it back out.
+minimumReleaseAgeExclude:
+  - '@nestjs/common'
+  - '@nestjs/core'
+  - '@nestjs/platform-fastify'
+  - '@nestjs/testing'
+  - '@nestjs/swagger'
+  # 2026-08-17: @swc/core rides with the Nest build pipeline and is pinned
+  # exact; 1.16.0 was 3 days young on the day the base was built.
+  - '@swc/core*'
+
+# Refuse a version whose publishing trust is weaker than earlier versions of
+# the same package — the signature of a stolen maintainer token.
+trustPolicy: no-downgrade
+
+# Only apply the trust check to versions published in the last 30 days
+# (minutes). Older provenance changes are workflow noise, not theft.
+trustPolicyIgnoreAfter: 43200
+
+# Named exceptions for a downgrade inside the window, checked by hand.
+# Every entry needs a date and a reason.
+trustPolicyExclude: []
+
+# Transitive dependencies must come from the registry. A sub-dependency
+# pointing at a git URL or a random tarball cannot be audited.
+blockExoticSubdeps: true
+
+# Dependency install scripts stay off except for the named few that
+# genuinely compile something.
+dangerouslyAllowAllBuilds: false
+allowBuilds:
+  argon2: true
+  '@swc/core': true
+  esbuild: true
+  # Telemetry beacon, not a build. Denied on purpose.
+  '@scarf/scarf': false
+
+# A dependency that wants to run a build script and is not in allowBuilds
+# stops the install instead of printing a warning nobody reads.
+strictDepBuilds: true
+
+# Honor the engines field instead of warning and carrying on.
+engineStrict: true
+
+# An unmet peer dependency fails the install.
+strictPeerDependencies: true
+
+# Warn when node_modules has drifted from the lockfile on `pnpm run`.
+# Scripts here normally go through bun; this covers direct pnpm use.
+verifyDepsBeforeRun: warn
+
+# CI noise.
+updateNotifier: false
+
+# Severity floor for a bare `pnpm audit`.
+auditLevel: moderate
+
+auditConfig:
+  # Advisories consciously accepted, with a dated reason each. Empty is the
+  # correct state; an entry here is a debt, not a fix. GHSA IDs only.
+  ignoreGhsas: []

@@ -1,0 +1,12 @@
+# Runs the watchdog probe every 45s, first run 90s after boot so the
+# app has time to come up.
+[Unit]
+Description=Timer for the back-eduia dev health watchdog
+
+[Timer]
+OnBootSec=90
+OnUnitActiveSec=45
+Unit=back-eduia-watchdog.service
+
+[Install]
+WantedBy=timers.target

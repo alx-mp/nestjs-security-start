@@ -1,0 +1,35 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+
+# Environment and secrets. .env.example is the only env file that belongs in
+# the repo. keys/ holds the ES256 signing pair; a committed private key is a
+# rotated private key.
+.env
+.env.*
+!.env.example
+keys/
+*.pem
+
+# Foreign lockfiles (pnpm-lock.yaml is the only one allowed; see
+# scripts/check-lockfiles.mjs)
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+bun.lock
+bun.lockb
+
+# Logs and temp
+logs/
+*.log
+.temp/
+.tmp/
+
+# Tooling state
+.gstack/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.tsbuildinfo

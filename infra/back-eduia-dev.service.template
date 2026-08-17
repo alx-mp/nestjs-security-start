@@ -1,0 +1,21 @@
+# back-eduia dev server, watch mode.
+# bun lives under /root, which SELinux blocks init_t from exec'ing directly.
+# systemd starts /bin/bash (allowed), bash then execs bun under
+# unconfined_service_t. The install script fills @APP_DIR@ and @BUN@.
+[Unit]
+Description=EduIA backend dev server (bun --watch)
+After=network.target postgres-18.service
+
+[Service]
+WorkingDirectory=@APP_DIR@
+Environment=NODE_ENV=development
+ExecStartPre=-/usr/sbin/fuser -k 3125/tcp
+ExecStart=/bin/bash -c 'exec @BUN@ --watch src/main.ts'
+SELinuxContext=system_u:system_r:unconfined_service_t:s0
+Restart=always
+RestartSec=2
+KillMode=mixed
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
