@@ -22,24 +22,40 @@ const boolSchema = z.stringbool();
  * address the throttler counts against and which one the audit trail records,
  * so it is a security setting, not plumbing.
  *
- * - a number: trust that many proxy hops. Behind one Caddy, that is `1`.
- * - a list of addresses or CIDRs: trust only those to set the header.
  * - `false`: trust nothing, correct when the app is reached directly.
+ * - a list of addresses or CIDRs: trust only those to set the header. With
+ *   the proxy or BFF on the same host, that is `127.0.0.1`.
  * - `true` is accepted for compatibility and should not be used in
  *   production: it trusts the whole chain, so any client can hand over an
  *   invented client IP and take somebody else's rate limit with it.
+ * - a hop count (`1`, `2`) is refused. Fastify 5.12.1 stopped honouring it
+ *   (GHSA-3m5p-2c4r-xxw2): a count cannot check who the immediate peer is,
+ *   so a client that reaches the app directly could forge the header.
+ *   Fastify now trusts nothing when handed a number, and a setting that
+ *   quietly does nothing is worse than a failed boot.
  */
-// The hop count is tried FIRST on purpose: z.stringbool() reads "1" as true,
-// which would silently turn the recommended single-hop setting into the one
-// value that trusts the whole chain.
-const trustProxySchema = z.union([
-  z.coerce.number().int().min(0).max(10),
-  z.stringbool(),
-  z
-    .string()
-    .min(1)
-    .transform((value) => value.split(',').map((part) => part.trim())),
-]);
+const HOP_COUNT_MESSAGE =
+  'a hop count is not supported: fastify >= 5.12.1 trusts nothing when given ' +
+  'a number (GHSA-3m5p-2c4r-xxw2). Use false, or list the proxy addresses ' +
+  'or CIDRs that may set the header, e.g. 127.0.0.1';
+
+// The digit check runs FIRST on purpose: z.stringbool() reads "1" as true,
+// which would silently turn an old single-hop setting into the one value
+// that trusts the whole chain.
+const trustProxySchema = z
+  .string()
+  .refine((value) => !/^\d+$/.test(value.trim()), {
+    error: HOP_COUNT_MESSAGE,
+  })
+  .pipe(
+    z.union([
+      z.stringbool(),
+      z
+        .string()
+        .min(1)
+        .transform((value) => value.split(',').map((part) => part.trim())),
+    ]),
+  );
 
 // OpenSSL name of the P-256 curve ES256 signs with.
 const ES256_CURVE = 'prime256v1';
@@ -73,7 +89,7 @@ function pemSchema(kind: 'private' | 'public') {
     .string()
     .transform((value) => value.replaceAll('\\n', '\n').trim())
     .refine((value) => isEs256Key(value, kind), {
-      message: `must be a PEM-encoded ES256 ${kind} key (P-256)`,
+      error: `must be a PEM-encoded ES256 ${kind} key (P-256)`,
     });
 }
 

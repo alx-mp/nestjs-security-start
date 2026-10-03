@@ -2,6 +2,8 @@
 node_modules/
 dist/
 coverage/
+# vitest 5 writes reporter output and attachments here
+.vitest/
 
 # Environment and secrets. .env.example is the only env file that belongs in
 # the repo. keys/ holds the ES256 signing pair; a committed private key is a

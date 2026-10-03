@@ -54,16 +54,25 @@ describe('validateEnv', () => {
   });
 
   // Which address the throttler counts and the audit trail records depends on
-  // this, so "1" has to mean one proxy hop. z.stringbool() reads "1" as true,
-  // and true trusts the whole forwarded chain: any client could then hand over
-  // an invented IP and spend somebody else's rate limit.
+  // this. A bare number used to mean proxy hops; fastify >= 5.12.1 ignores
+  // it, and z.stringbool() would read "1" as true, which trusts the whole
+  // forwarded chain: any client could then hand over an invented IP and spend
+  // somebody else's rate limit. So a hop count has to fail the boot.
   describe('TRUST_PROXY', () => {
     const parse = (value: string): unknown =>
       validateEnv({ ...baseEnv(), TRUST_PROXY: value }).TRUST_PROXY;
 
-    it('reads a hop count as a number, not as "true"', () => {
-      expect(parse('1')).toBe(1);
-      expect(parse('2')).toBe(2);
+    it('refuses a hop count instead of reading it as "true"', () => {
+      for (const hops of ['0', '1', '2', ' 1 ']) {
+        expect(() => parse(hops)).toThrow(/hop count is not supported/);
+      }
+    });
+
+    it('says what to use instead of a hop count', () => {
+      expect(() => parse('1')).toThrow(/TRUST_PROXY/);
+      expect(() => parse('1')).toThrow(
+        /Use false, or list the proxy addresses/,
+      );
     });
 
     it('still understands the booleans', () => {

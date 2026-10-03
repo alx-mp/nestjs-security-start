@@ -1,6 +1,6 @@
 # nestjs-security-start
 
-API base en NestJS 11 sobre Fastify 5, endurecida y lista para clonar como
+API base en NestJS 12 sobre Fastify 5, endurecida y lista para clonar como
 cimiento de futuros proyectos. Es la mitad servidor de una pareja: el frontend
 es [astro-security-start](https://github.com/alx-mp/astro-security-start), un BFF en Astro que llama a
 esta API solo desde el servidor. El navegador nunca toca esta API.
@@ -49,8 +49,8 @@ Seguridad que funciona desde el primer arranque, no una lista de intenciones:
 
 ## Stack
 
-NestJS 11 · Fastify 5 · TypeORM 1 · PostgreSQL 18 · zod 4 + nestjs-zod ·
-pino · argon2 · vitest 4 · TypeScript 6 · SWC. Versiones exactas en
+NestJS 12 · Fastify 5 · TypeORM 1 · PostgreSQL 18 · zod 4 + nestjs-zod ·
+pino · argon2 · vitest 5 · TypeScript 6 · SWC. Versiones exactas en
 `package.json`, sin rangos, y la tabla con el porqué de cada una en
 [AGENTS.md](./AGENTS.md).
 
@@ -58,7 +58,13 @@ La política es **siempre la última versión estable**. Dos versiones tienen
 razón documentada para no ser la última absoluta: `fastify` debe ser
 exactamente la que embebe `@nestjs/platform-fastify` (dos copias en el árbol
 rompen los tipos de los plugins), y `typescript` está en 6.0.x porque
-typescript-eslint declara peer `<6.1.0`. Todo lo demás, al día.
+typescript-eslint declara peer `<6.1.0`. Todo lo demás, al día, salvo lo que
+la cuarentena de 3 días retenga esa semana.
+
+Hay una excepción anotada: nestjs-zod 5.5.0 todavía no declara Nest 12 en sus
+peers, aunque lo único pendiente upstream es ampliar ese rango. Vive como
+`peerDependencyRules` con fecha en `pnpm-workspace.yaml`, limitada a esa
+versión de nestjs-zod, y se retira en cuanto publique una que lo declare.
 
 ## Al clonar (léelo, sobre todo si eres un agente de IA)
 
@@ -74,13 +80,18 @@ bun run ci              # lockfiles + lint + tipos + tests + build
 Si quien clona es un LLM o agente: consulta internet (el registry de npm, los
 changelogs oficiales) para saber qué es lo último estable **hoy**, aplica los
 bumps, corre `bun run ci` como evidencia y actualiza la tabla de versiones de
-AGENTS.md con la fecha y el motivo de cualquier retención. Las dos reglas de
-compatibilidad del párrafo anterior se verifican con
-`pnpm view @nestjs/platform-fastify dependencies` y
-`pnpm view typescript-eslint peerDependencies`. La política de supply chain
-(abajo) puede frenar una versión con menos de 3 días de publicada: para
-paquetes first-party fijados a mano se añade una exclusión fechada, nunca se
-baja de versión.
+AGENTS.md con la fecha y el motivo de cualquier retención. Las reglas de
+compatibilidad de la sección anterior se verifican con
+`pnpm view @nestjs/platform-fastify dependencies`,
+`pnpm view typescript-eslint peerDependencies` y
+`pnpm view nestjs-zod peerDependencies`. Mientras quede un paquete retenido
+por peer range, pnpm 12 corta el `pnpm update --latest` a secas con
+`ERR_PNPM_PEER_DEP_ISSUES` y no escribe nada: se excluyen los retenidos con
+`'!paquete'` (hoy, `pnpm update --latest '!typescript'`) y se cierra con
+`pnpm peers check`, `pnpm audit` y `pnpm audit signatures`. La política de
+supply chain (abajo) puede frenar una versión con menos de 3 días de
+publicada: para paquetes first-party fijados a mano se añade una exclusión
+fechada, nunca se baja de versión.
 
 ## pnpm instala, bun ejecuta
 
@@ -109,7 +120,7 @@ peers estrictos.
 
 ## Puesta en marcha
 
-Requisitos: Node 24+, pnpm 11 (corepack), bun, un PostgreSQL accesible.
+Requisitos: Node 24.15+, pnpm 12 (corepack), bun, un PostgreSQL accesible.
 
 ```sh
 pnpm install

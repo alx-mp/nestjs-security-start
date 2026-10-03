@@ -1,12 +1,19 @@
 // @ts-check
+import { defineConfig, globalIgnores } from 'eslint/config';
 import eslintConfigPrettier from 'eslint-config-prettier';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(
-  {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '**/*.mjs', '**/*.mts'],
-  },
-  ...tseslint.configs.recommendedTypeChecked,
+// defineConfig() comes from ESLint core; tseslint.config() is deprecated.
+export default defineConfig(
+  globalIgnores([
+    'dist/',
+    'node_modules/',
+    'coverage/',
+    '.vitest/',
+    '**/*.mjs',
+    '**/*.mts',
+  ]),
+  tseslint.configs.recommendedTypeChecked,
   {
     languageOptions: {
       parserOptions: {

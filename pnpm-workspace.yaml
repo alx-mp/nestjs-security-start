@@ -1,6 +1,8 @@
 # pnpm settings for this project. Same supply-chain posture as the front
-# (dashboard-eduai): pnpm 11 ignores these keys in .npmrc, silently, so they
-# live here. Keys are camelCase; pnpm 11 skips any key that is not.
+# (dashboard-eduai). pnpm reads only registry and auth settings from .npmrc, so
+# everything else lives here. Keys are camelCase. pnpm 12 stops with
+# ERR_PNPM_UNRECOGNIZED_WORKSPACE_SETTINGS on a key it does not know; pnpm 11
+# skipped it in silence.
 
 # Wait three days before adopting a freshly published version. Most malicious
 # npm releases are caught and yanked within hours; this window is what buys
@@ -32,9 +34,6 @@ minimumReleaseAgeExclude:
   - '@nestjs/platform-fastify'
   - '@nestjs/testing'
   - '@nestjs/swagger'
-  # 2026-08-17: @swc/core rides with the Nest build pipeline and is pinned
-  # exact; 1.16.0 was 3 days young on the day the base was built.
-  - '@swc/core*'
 
 # Refuse a version whose publishing trust is weaker than earlier versions of
 # the same package — the signature of a stolen maintainer token.
@@ -47,6 +46,12 @@ trustPolicyIgnoreAfter: 43200
 # Named exceptions for a downgrade inside the window, checked by hand.
 # Every entry needs a date and a reason.
 trustPolicyExclude: []
+
+# Re-check every lockfile entry against the age gate and the trust policy on
+# install. false is the default; it is written down so nobody flips it to
+# save a few seconds. A lockfile authored under a weaker policy must not get
+# a free pass.
+trustLockfile: false
 
 # Transitive dependencies must come from the registry. A sub-dependency
 # pointing at a git URL or a random tarball cannot be audited.
@@ -72,6 +77,23 @@ engineStrict: true
 # An unmet peer dependency fails the install.
 strictPeerDependencies: true
 
+# The one exception, dated 2026-10-03. nestjs-zod 5.5.0 still declares peers
+# on Nest 10/11 and @nestjs/swagger up to 11. The ci and e2e suites pass with
+# it on Nest 12, and the upstream fix only widens the ranges:
+#   https://github.com/BenLorantfy/nestjs-zod/issues/471
+#   https://github.com/BenLorantfy/nestjs-zod/pull/478
+# The rule is pinned to nestjs-zod 5.5.0 and to these two peers, so it stops
+# matching on the next nestjs-zod release. Drop it when nestjs-zod publishes
+# a release whose peers include Nest 12.
+peerDependencyRules:
+  allowedVersions:
+    'nestjs-zod@5.5.0>@nestjs/common': '^12.0.0'
+    'nestjs-zod@5.5.0>@nestjs/swagger': '^12.0.0'
+
+# Exact versions in package.json, no ranges. It has to be set here: pnpm
+# ignores save-exact in .npmrc and writes ^x.y.z without a word.
+saveExact: true
+
 # Warn when node_modules has drifted from the lockfile on `pnpm run`.
 # Scripts here normally go through bun; this covers direct pnpm use.
 verifyDepsBeforeRun: warn
@@ -79,10 +101,11 @@ verifyDepsBeforeRun: warn
 # CI noise.
 updateNotifier: false
 
-# Severity floor for a bare `pnpm audit`.
-auditLevel: moderate
-
-auditConfig:
+# `audit` replaces the auditLevel / auditConfig.ignoreGhsas spellings, which
+# pnpm 12 still reads but lists as deprecated.
+audit:
+  # Severity floor for a bare `pnpm audit`.
+  level: moderate
   # Advisories consciously accepted, with a dated reason each. Empty is the
   # correct state; an entry here is a debt, not a fix. GHSA IDs only.
-  ignoreGhsas: []
+  ignore: []

@@ -33,7 +33,7 @@ export class HealthController {
   async check() {
     const heapLimitBytes = this.config.env.HEALTH_HEAP_LIMIT_MB * 1024 * 1024;
     const result = await this.health.check([
-      () => this.db.pingCheck('database', { timeout: 1_500 }),
+      () => this.db.pingCheck('database').withTimeout(1_500),
       () => this.memory.checkHeap('memory_heap', heapLimitBytes),
     ]);
 
