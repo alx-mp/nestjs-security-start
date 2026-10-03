@@ -10,6 +10,6 @@ export default defineConfig({
     hookTimeout: 60_000,
     fileParallelism: false,
   },
-  // ES module output is required: vitest 4 cannot be require()d.
+  // ES module output is required: vitest (4 and later) cannot be require()d.
   plugins: [swc.vite({ module: { type: 'es6' } })],
 });

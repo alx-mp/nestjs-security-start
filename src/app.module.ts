@@ -55,7 +55,9 @@ function buildLoggerOptions() {
     // every concurrent user. The tight per-route @Throttle overrides on the
     // auth endpoints (3-10/min) are what guard brute force; these global
     // tiers only need to stop runaway loops. Real per-client tracking needs
-    // the BFF to forward X-Forwarded-For + TRUST_PROXY=1.
+    // the BFF to forward X-Forwarded-For and TRUST_PROXY set to the BFF's
+    // address (a hop count is refused, see src/config/env.ts). The default
+    // tracker groups IPv6 clients by /64 since throttler 6.7.
     ThrottlerModule.forRoot({
       throttlers: [
         { name: 'short', ttl: seconds(1), limit: 40 },
